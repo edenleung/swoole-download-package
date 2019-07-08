@@ -2,7 +2,7 @@
 namespace App;
 
 use App\Scraper;
-use Swlib\SaberGM;
+use Swlib\Saber;
 
 require_once '../vendor/autoload.php';
 
@@ -14,8 +14,16 @@ class Download
 {
     protected $server;
 
+    protected $saber;
+
     public function __construct()
     {
+        $this->saber = Saber::create([
+            'base_uri' => 'https://codeload.github.com',
+            'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3824.6 Safari/537.36',
+            'use_pool' => true
+        ]);
+
         $this->createSwooleServer();
     }
 
@@ -52,20 +60,18 @@ class Download
 
             $savePath = $dir . '/' . $file;
             try {
-                $response = SaberGM::download(
-                    'https://codeload.github.com/'. $user.'/'. $package .'/'. $ext .'/' . $version,
+                $response = $this->saber->download(
+                    '/' . $user.'/'. $package .'/'. $ext .'/' . $version,
                     $savePath
                 );
 
                 if ($response->success) {
                     echo "下载完成\n";
                 }
-
             } catch (\Exception $e) {
-                $this->download($version, $url);
+                $this->download($version, $url, $ext);
             }
         });
-        
     }
 
     public function run()
