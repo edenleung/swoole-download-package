@@ -77,10 +77,11 @@ class Dom
      */
     protected function getDownloadLink(Crawler $node)
     {
-        $urls = [];
-        $urls[] = $node->filter('ul.list-style-none li:nth-child(3) a')->attr('href');
-        $urls[] = $node->filter('ul.list-style-none li:nth-child(4) a')->attr('href');
-
+        $urls = [
+            'zip' => $node->filter('ul.list-style-none li:nth-child(3) a')->attr('href'),
+            'tar.gz' => $node->filter('ul.list-style-none li:nth-child(4) a')->attr('href')
+        ];
+        
         return $urls;
     }
 

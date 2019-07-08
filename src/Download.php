@@ -30,8 +30,9 @@ class Download
         $data = json_decode($data, true);
         $version = $data['version'];
         $url = $data['url'];
+        $ext = $data['ext'];
 
-        $this->download($version, $url);
+        $this->download($version, $url, $ext);
     }
 
     /**
@@ -39,13 +40,11 @@ class Download
      *
      * @return void
      */
-    protected function download(string $version, string $url)
+    protected function download(string $version, string $url, string $ext)
     {
-        go(function () use ($version, $url) {
+        go(function () use ($version, $url, $ext) {
             list($tmp, $user, $package, $archive, $file) = explode('/', $url);
             $dir = "./packages/{$user}/{$package}";
-
-            list($tmp, $ext) = explode($version . '.', $file);
 
             if (!file_exists($dir)) {
                 mkdir($dir, 0777, true);
@@ -53,15 +52,13 @@ class Download
 
             $savePath = $dir . '/' . $file;
             try {
-
-                var_dump('https://codeload.github.com/swlib/saber/'. $ext .'/' . $version);
                 $response = SaberGM::download(
                     'https://codeload.github.com/'. $user.'/'. $package .'/'. $ext .'/' . $version,
                     $savePath
                 );
 
                 if ($response->success) {
-                    // 下载完成
+                    echo "下载完成\n";
                 }
 
             } catch (\Exception $e) {

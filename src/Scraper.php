@@ -36,8 +36,8 @@ class Scraper
                 $data = $dom->getVersionUrls();
                 
                 foreach($data as $item) {
-                    foreach($item['urls'] as $url) {
-                        $this->publish($item['version'], $url);
+                    foreach($item['urls'] as $ext => $url) {
+                        $this->publish($item['version'], $url, $ext);
                     }
                 }
                 
@@ -58,9 +58,9 @@ class Scraper
      * @param array $urls
      * @return void
      */
-    protected function publish(string $version, string $url)
+    protected function publish(string $version, string $url, string $ext)
     {
-        $msg = json_encode(['version' => $version, 'url' => $url]);
+        $msg = json_encode(['version' => $version, 'url' => $url, 'ext' => $ext]);
 
         $client = new \Swoole\Client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
         $client->on("connect", function($cli) use ($version, $msg) {
