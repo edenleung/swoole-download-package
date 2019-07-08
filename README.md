@@ -7,15 +7,10 @@ composer install
 ```
 
 ## 配置
-[替换或增加你要下载的包](https://github.com/xiaodit/swoole-download-package/blob/master/src/App.php#L40)
+[替换或增加你要下载的包](https://github.com/xiaodit/swoole-download-package/blob/master/start.php#L16)
 
 ## 运行
-1. 下载服务
-```sh
-php Download.php
+1. 启动
 ```
-
-2. 启动
-```
-php App.php
+php start.php
 ```
