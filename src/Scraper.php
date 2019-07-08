@@ -1,24 +1,61 @@
 <?php
 namespace App;
 
-use Swlib\Saber;
 use App\Dom;
+use Swlib\Saber;
 
-require_once '../vendor/autoload.php';
-
-class Scraper
+final class Scraper
 {
     private $saber;
 
-    public function __construct()
+    private $package;
+
+    private $savePath;
+
+    const HOST = 'https://github.com';
+
+    const DOWNLOAD = 'https://codeload.github.com';
+
+    public function __construct(Saber $saber, string $savePath)
     {
-        $this->saber = Saber::create([
-            'base_uri' => 'https://github.com/',
-            'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3824.6 Safari/537.36',
-            'use_pool' => true
-        ]);
+        $this->saber = $saber;
+        $this->savePath = $savePath;
     }
 
+    /**
+     * 配置
+     *
+     * @param array $packages
+     * @return void
+     */
+    public function scrape(array $packages)
+    {
+        $this->packages = $packages;
+
+        return $this;
+    }
+
+    /**
+     * 开始运行
+     *
+     * @return void
+     */
+    public function run()
+    {
+        foreach ($this->packages as $package) {
+            go(function () use ($package) {
+                $this->fetchPagination($package);
+            });
+        }
+    }
+
+    /**
+     * 拉取信息
+     *
+     * @param string $package
+     * @param string $lastVersion
+     * @return void
+     */
     public function fetchPagination(string $package, string $lastVersion = '')
     {
         $url = $package . '/tags?after=' . $lastVersion;
@@ -26,7 +63,7 @@ class Scraper
             echo "=============================================\n";
             echo "开始拉取:{$url}\n";
             echo "=============================================\n";
-            $html = $this->saber->get($url, ['max_co' => 5, 'timeout' => 500]);
+            $html = $this->saber->get(Scraper::HOST . '/' . $url, ['max_co' => 5, 'timeout' => 500]);
             
 
             $dom = new Dom((string)$html);
@@ -37,7 +74,7 @@ class Scraper
                 
                 foreach($data as $item) {
                     foreach($item['urls'] as $ext => $url) {
-                        $this->publish($item['version'], $url, $ext);
+                        $this->download($item['version'], $url, $ext);
                     }
                 }
                 
@@ -52,31 +89,33 @@ class Scraper
     }
 
     /**
-     * 发布下载任务
+     * 下载、保存包
      *
-     * @param string $version
-     * @param array $urls
      * @return void
      */
-    protected function publish(string $version, string $url, string $ext)
+    protected function download(string $version, string $url, string $ext)
     {
-        $msg = json_encode(['version' => $version, 'url' => $url, 'ext' => $ext]);
+        go(function () use ($version, $url, $ext) {
+            list($tmp, $user, $package, $archive, $file) = explode('/', $url);
+            $dir = $this->savePath . "/{$user}/{$package}";
 
-        $client = new \Swoole\Client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
-        $client->on("connect", function($cli) use ($version, $msg) {
-            echo '发布下载任务-'. $version . "\n";
-            $cli->send($msg);
-        });
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
 
-        $client->on("receive", function($cli) {
-        });
+            $savePath = $dir . '/' . $file;
+            try {
+                $response = $this->saber->download(
+                    Scraper::DOWNLOAD . '/' . $user.'/'. $package .'/'. $ext .'/' . $version,
+                    $savePath
+                );
 
-        $client->on("error", function($cli) {
+                if ($response->success) {
+                    echo "下载完成\n";
+                }
+            } catch (\Exception $e) {
+                $this->download($version, $url, $ext);
+            }
         });
-
-        $client->on("close", function($cli) {
-        });
-        
-        $client->connect('0.0.0.0', 9502);
     }
 }

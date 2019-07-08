@@ -1,8 +1,6 @@
 <?php
 namespace App;
 
-require_once '../vendor/autoload.php';
-
 use Symfony\Component\DomCrawler\Crawler;
 use App\Exceptions\NotFoundPackage;
 
@@ -81,7 +79,7 @@ class Dom
             'zip' => $node->filter('ul.list-style-none li:nth-child(3) a')->attr('href'),
             'tar.gz' => $node->filter('ul.list-style-none li:nth-child(4) a')->attr('href')
         ];
-        
+
         return $urls;
     }
 
